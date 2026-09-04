@@ -1,7 +1,7 @@
 #!/bin/sh
 # Installs macro-tui from the latest GitHub release.
 #
-#   curl -fsSL https://jp30566347.github.io/macro-tui/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/jp30566347/macro-tui/main/install.sh | sh
 #
 # Downloads the binary for this platform, verifies its checksum, and puts it in
 # ~/.local/bin. Set MACRO_TUI_BIN_DIR to install somewhere else, or

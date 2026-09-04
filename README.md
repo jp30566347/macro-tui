@@ -18,7 +18,7 @@ No API key, no signup, no configuration. It works the moment it starts.
 ## Install
 
 ```sh
-curl -fsSL https://jp30566347.github.io/macro-tui/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/jp30566347/macro-tui/main/install.sh | sh
 ```
 
 Drops a single binary in `~/.local/bin` after verifying its checksum. On Arch
