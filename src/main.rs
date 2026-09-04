@@ -1,0 +1,99 @@
+mod action;
+mod api;
+mod app;
+mod catalog;
+mod config;
+mod tui;
+mod ui;
+
+use clap::Parser;
+use color_eyre::eyre::Result;
+
+#[derive(Parser)]
+#[command(
+    name = "macro-tui",
+    version,
+    about = "Macro market overview and news for the terminal"
+)]
+struct Cli {
+    /// Starting tab (1=Board, 2=News)
+    #[arg(short, long, value_parser = clap::value_parser!(u8).range(1..=2))]
+    tab: Option<u8>,
+
+    /// Print every instrument on the board and exit
+    #[arg(long)]
+    list_symbols: bool,
+
+    /// Write the given --tab to the config file and exit
+    #[arg(long)]
+    save_config: bool,
+
+    /// Ignore the config file
+    #[arg(long)]
+    no_config: bool,
+}
+
+/// Restores the terminal before a panic or error report is printed, so the
+/// message lands on a usable screen instead of the alternate one.
+fn install_hooks() -> Result<()> {
+    let (panic_hook, eyre_hook) = color_eyre::config::HookBuilder::default().into_hooks();
+
+    let eyre_hook = eyre_hook.into_eyre_hook();
+    color_eyre::eyre::set_hook(Box::new(move |error| {
+        let _ = tui::restore();
+        eyre_hook(error)
+    }))?;
+
+    let panic_hook = panic_hook.into_panic_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let _ = tui::restore();
+        panic_hook(info);
+    }));
+
+    Ok(())
+}
+
+fn list_symbols() {
+    let mut current = None;
+    for instrument in catalog::INSTRUMENTS {
+        if current != Some(instrument.group) {
+            println!("\n{}", instrument.group.as_str());
+            current = Some(instrument.group);
+        }
+        println!("  {:<16} {}", instrument.name, instrument.cnbc);
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let cli = Cli::parse();
+
+    if cli.list_symbols {
+        list_symbols();
+        return Ok(());
+    }
+
+    // Command line beats config file, which beats the built-in default.
+    let stored = if cli.no_config {
+        config::Config::default()
+    } else {
+        config::Config::load()?
+    };
+    let settings = config::Config {
+        tab: cli.tab.or(stored.tab),
+    };
+
+    if cli.save_config {
+        let path = settings.save()?;
+        println!("Wrote {}", path.display());
+        return Ok(());
+    }
+
+    install_hooks()?;
+
+    let tab = usize::from(settings.tab.unwrap_or(1).clamp(1, 2) - 1);
+    let mut app = app::App::new(tab);
+    let mut tui = tui::Tui::new()?;
+
+    tui.run(&mut app).await
+}
