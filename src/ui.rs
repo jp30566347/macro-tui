@@ -134,6 +134,24 @@ fn draw_ticker_list(f: &mut Frame, app: &App, area: Rect) {
     let inner = block.inner(area);
     f.render_widget(block, area);
 
+    // One width for every row, so the trends line up in a column.
+    //
+    // Series lengths differ: crypto trades weekends and so has about 31 daily
+    // closes in a month where the equity indices have 23. Sizing each row to
+    // its own series left the shorter ones floating away from the percent
+    // column, so the shortest series sets the width for all of them.
+    let shortest = INSTRUMENTS
+        .iter()
+        .filter_map(|i| app.history.get(&(Range::OneMonth, i.history?)))
+        .map(|s| s.len())
+        .filter(|n| *n > 0)
+        .min()
+        .unwrap_or(0);
+    let spark_width = (inner.width as usize)
+        .saturating_sub(FIXED_WIDTH + 1)
+        .min(SPARK_MAX)
+        .min(shortest);
+
     let mut lines: Vec<Line> = Vec::new();
     // Where the selected instrument ends up once headings are interleaved.
     let mut selected_line = 0usize;
@@ -156,6 +174,7 @@ fn draw_ticker_list(f: &mut Frame, app: &App, area: Rect) {
             n,
             n == app.board_selected,
             inner.width,
+            spark_width,
         ));
     }
 
@@ -172,17 +191,13 @@ fn ticker_row(
     index: usize,
     selected: bool,
     width: u16,
+    spark_width: usize,
 ) -> Line<'static> {
     let marker = if selected { "\u{25b8} " } else { "  " };
     let mut spans = vec![Span::raw(format!(
         "{marker}{:<NAME_WIDTH$}",
         truncate(instrument.name, NAME_WIDTH)
     ))];
-    // Derived rather than fixed, so the glyphs reach the pane edge instead of
-    // stopping a column short of it.
-    let spark_width = (width as usize)
-        .saturating_sub(FIXED_WIDTH + 1)
-        .min(SPARK_MAX);
 
     match &app.quotes[index] {
         Some(quote) => {
@@ -639,7 +654,9 @@ fn draw_status(f: &mut Frame, app: &App, area: Rect) {
     let left = Line::from(spans);
     // Dropped rather than overlapped: the two are drawn into the same row, so
     // on a narrow terminal they would print over each other.
-    if left.width() + hint.len() <= area.width as usize {
+    // Two cells of clearance, so the two halves never sit flush against
+    // each other and read as one run of text.
+    if left.width() + hint.len() + 2 <= area.width as usize {
         f.render_widget(
             Paragraph::new(Line::from(Span::styled(hint, MUTED))).alignment(Alignment::Right),
             area,
@@ -790,6 +807,16 @@ mod tests {
         assert_eq!(spark.chars().count(), 3);
         assert_eq!(spark.chars().next(), Some('\u{2581}'));
         assert_eq!(spark.chars().last(), Some('\u{2588}'));
+    }
+
+    /// Crypto trades weekends and so carries more sessions than the equity
+    /// indices. Sizing each row to its own series left the shorter ones
+    /// floating away from the percent column, ragged down the board.
+    #[test]
+    fn a_shorter_series_still_fills_the_width_it_is_given() {
+        let equities = sparkline(&series(&[1.0, 2.0, 3.0]), 3);
+        let crypto = sparkline(&series(&[1.0, 2.0, 3.0, 4.0, 5.0]), 3);
+        assert_eq!(equities.chars().count(), crypto.chars().count());
     }
 
     #[test]
