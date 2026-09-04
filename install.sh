@@ -111,7 +111,7 @@ case ":${PATH}:" in
         say ""
         say "$BIN_DIR is not on your PATH. Add it with:"
         say ""
-        say "    echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.bashrc && exec bash"
+        say "    echo 'export PATH=\"$BIN_DIR:\$PATH\"' >> ~/.bashrc && exec bash"
         say ""
         say "Or run it directly: $BIN_DIR/macro-tui"
         ;;

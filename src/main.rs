@@ -53,15 +53,21 @@ fn install_hooks() -> Result<()> {
     Ok(())
 }
 
-fn list_symbols() {
+/// Writes through `writeln!` rather than `println!` so a closed pipe comes
+/// back as an error to handle rather than as a panic. Rust ignores SIGPIPE, so
+/// `macro-tui --list-symbols | head` would otherwise abort with a backtrace.
+fn list_symbols() -> std::io::Result<()> {
+    use std::io::Write;
+    let mut out = std::io::stdout().lock();
     let mut current = None;
     for instrument in catalog::INSTRUMENTS {
         if current != Some(instrument.group) {
-            println!("\n{}", instrument.group.as_str());
+            writeln!(out, "\n{}", instrument.group.as_str())?;
             current = Some(instrument.group);
         }
-        println!("  {:<16} {}", instrument.name, instrument.cnbc);
+        writeln!(out, "  {:<16} {}", instrument.name, instrument.cnbc)?;
     }
+    Ok(())
 }
 
 #[tokio::main]
@@ -69,7 +75,13 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     if cli.list_symbols {
-        list_symbols();
+        // Piping into `head` closes the pipe early. That is the caller getting
+        // what they asked for, not a failure.
+        if let Err(e) = list_symbols() {
+            if e.kind() != std::io::ErrorKind::BrokenPipe {
+                return Err(e.into());
+            }
+        }
         return Ok(());
     }
 
