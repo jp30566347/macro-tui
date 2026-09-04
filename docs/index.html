@@ -64,13 +64,14 @@ h1 .accent{color:var(--green)}
   text-transform:uppercase; color:var(--dim); margin:0 0 10px; text-align:left;
 }
 .cmd{
-  display:flex; align-items:stretch; gap:0;
+  display:flex; align-items:center; gap:0;
   background:var(--surface); border:1px solid var(--line); border-radius:10px;
   overflow:hidden; text-align:left;
 }
 .cmd code{
   flex:1; min-width:0; font-family:var(--mono); font-size:.9rem;
-  padding:16px 18px; overflow-x:auto; white-space:nowrap; color:var(--fg);
+  padding:16px 18px; color:var(--fg);
+  white-space:pre-wrap; overflow-wrap:anywhere;
 }
 .cmd code .prompt{color:var(--green); user-select:none}
 .copy{
@@ -152,8 +153,8 @@ footer a{color:var(--muted)}
   <div class="install">
     <p class="install-label">Install</p>
     <div class="cmd">
-      <code id="cmd"><span class="prompt">$ </span>curl -fsSL https://raw.githubusercontent.com/jp30566347/macro-tui/main/install.sh | sh</code>
-      <button class="copy" id="copy" type="button" data-cmd="curl -fsSL https://raw.githubusercontent.com/jp30566347/macro-tui/main/install.sh | sh">Copy</button>
+      <code id="cmd"><span class="prompt">$ </span>curl -fsSL https://jp30566347.github.io/macro-tui/install.sh | sh</code>
+      <button class="copy" id="copy" type="button" data-cmd="curl -fsSL https://jp30566347.github.io/macro-tui/install.sh | sh">Copy</button>
     </div>
     <p class="install-note">
       Drops a single binary in <code>~/.local/bin</code>. Verifies its checksum. Then run <code>macro-tui</code>.
