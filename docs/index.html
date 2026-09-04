@@ -64,7 +64,7 @@ h1 .accent{color:var(--green)}
   text-transform:uppercase; color:var(--dim); margin:0 0 10px; text-align:left;
 }
 .cmd{
-  display:flex; align-items:center; gap:0;
+  display:flex; align-items:stretch; gap:0;
   background:var(--surface); border:1px solid var(--line); border-radius:10px;
   overflow:hidden; text-align:left;
 }
@@ -281,33 +281,52 @@ cd macro-tui && makepkg -si</pre>
 </div>
 
 <script>
-// Copy the command without the "$ " prompt, which is decoration.
-document.getElementById('copy').addEventListener('click', async function () {
-  const button = this;
-  const text = button.dataset.cmd;
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch (e) {
-    // Clipboard access is blocked outside a secure context and in some
-    // browsers, so fall back to selecting the text for a manual copy.
-    const range = document.createRange();
-    range.selectNodeContents(document.getElementById('cmd'));
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
-    try { document.execCommand('copy'); } catch (_) {
-      button.textContent = 'Press ⌘C';
-      return;
-    }
-    selection.removeAllRanges();
+(function () {
+  var button = document.getElementById('copy');
+
+  // Selects the command and asks the document to copy it. The path for
+  // browsers without the async clipboard API, and the fallback for when it
+  // rejects.
+  function legacyCopy(text) {
+    var field = document.createElement('textarea');
+    field.value = text;
+    field.setAttribute('readonly', '');
+    field.style.cssText = 'position:fixed;top:-9999px;opacity:0';
+    document.body.appendChild(field);
+    field.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(field);
+    return ok;
   }
-  button.textContent = 'Copied';
-  button.classList.add('done');
-  setTimeout(function () {
-    button.textContent = 'Copy';
-    button.classList.remove('done');
-  }, 1800);
-});
+
+  function copy(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      // Raced against a timeout: if the browser puts the write behind a
+      // permission prompt, the promise can sit unresolved indefinitely and
+      // the button would never give any feedback at all.
+      var timeout = new Promise(function (_, reject) {
+        setTimeout(function () { reject(new Error('timed out')); }, 1200);
+      });
+      return Promise.race([navigator.clipboard.writeText(text), timeout])
+        .then(function () { return true; })
+        .catch(function () { return legacyCopy(text); });
+    }
+    return Promise.resolve(legacyCopy(text));
+  }
+
+  button.addEventListener('click', function () {
+    var original = 'Copy';
+    copy(button.dataset.cmd).then(function (ok) {
+      button.textContent = ok ? 'Copied' : 'Press \u2318C';
+      button.classList.toggle('done', ok);
+      setTimeout(function () {
+        button.textContent = original;
+        button.classList.remove('done');
+      }, 1800);
+    });
+  });
+})();
 </script>
 </body>
 </html>

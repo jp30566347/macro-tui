@@ -6,6 +6,11 @@ pkgdesc="Macro market overview and news in your terminal"
 arch=('x86_64' 'aarch64')
 url="https://github.com/jp30566347/macro-tui"
 license=('MIT')
+# makepkg's own LTO adds -flto to CFLAGS, which makes the cc crate emit
+# bitcode for ring's C sources while its hand-written assembly stays as
+# objects; linking then fails on undefined ring_core_* symbols. Cargo does
+# its own link-time optimisation through the release profile anyway.
+options=('!lto')
 depends=('gcc-libs')
 makedepends=('cargo')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
@@ -21,7 +26,7 @@ build() {
     cd "$pkgname-$pkgver"
     export RUSTUP_TOOLCHAIN=stable
     export CARGO_TARGET_DIR=target
-    cargo build --frozen --release --all-features
+    cargo build --frozen --release
 }
 
 check() {
