@@ -1,5 +1,7 @@
 # macro-tui
 
+[jp30566347.github.io/macro-tui](https://jp30566347.github.io/macro-tui)
+
 A macro market overview and the news moving it, in your terminal.
 
 Twenty-six instruments on one screen: US indices and volatility, Treasury
@@ -10,23 +12,22 @@ mention it.
 
 No API key, no signup, no configuration. It works the moment it starts.
 
-```
-┌ Board ─────────────────────────────────────────────────┐┌ News · US equity & vol ────────────────┐
-│─ US equity & vol                                       ││▸   8m CNBC U.S. payrolls rose 162,000…│
-│▸ S&P 500         7,725.60     -22.11  -0.29% ▂▄▄▇▆▄▁▃█▇││    9d CNBC Fed's preferred inflation …│
-│  Nasdaq 100     29,551.89     +69.57  +0.24% ▁▃▃█▆▆▂▂▆▇││   22d MW   Six reasons the risk of a …│
-│  VIX                14.08      -0.24  -1.68% ▆▅▄▂▂▄█▄▂▁││                                        │
-│─ Rates & dollar                                        ││                                        │
-│  US 2-year         4.368%    +3.4 bp  +0.78% ▂▁▂▃▆▆█▇▆▇││                                        │
-│  US 10-year        4.768%    +0.6 bp  +0.13% ▄▁▂▃▅▆█▇▇▇││                                        │
-└ j/k ↕ · h/l group · Enter detail · ? help ─────────────┘└ n/N scroll · f all · o open ───────────┘
-```
+![The board](docs/screenshot.png)
+
 
 ## Install
 
 ```sh
-cargo build --release
+curl -fsSL https://jp30566347.github.io/macro-tui/install.sh | sh
 ```
+
+Drops a single binary in `~/.local/bin` after verifying its checksum. On Arch
+and Omarchy, `makepkg -si` in a clone builds a real package instead. There are
+also prebuilt binaries on the [releases page][releases], and
+`cargo install --git https://github.com/jp30566347/macro-tui` builds from
+source.
+
+[releases]: https://github.com/jp30566347/macro-tui/releases/latest
 
 ## Keys
 
