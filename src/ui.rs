@@ -635,14 +635,17 @@ fn draw_status(f: &mut Frame, app: &App, area: Rect) {
         ));
     }
 
-    let left = Paragraph::new(Line::from(spans));
-    let right = Paragraph::new(Line::from(Span::styled(
-        "[?] help  [r]efresh  [q]uit ",
-        MUTED,
-    )))
-    .alignment(Alignment::Right);
-    f.render_widget(left, area);
-    f.render_widget(right, area);
+    let hint = "[?] help  [r]efresh  [q]uit ";
+    let left = Line::from(spans);
+    // Dropped rather than overlapped: the two are drawn into the same row, so
+    // on a narrow terminal they would print over each other.
+    if left.width() + hint.len() <= area.width as usize {
+        f.render_widget(
+            Paragraph::new(Line::from(Span::styled(hint, MUTED))).alignment(Alignment::Right),
+            area,
+        );
+    }
+    f.render_widget(Paragraph::new(left), area);
 }
 
 fn draw_help_overlay(f: &mut Frame, area: Rect) {
