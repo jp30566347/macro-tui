@@ -37,3 +37,6 @@ chrono = { version = "0.4", features = ["serde"] }
 toml = "1"
 dirs = "6"
 quick-xml = "0.42"
+image = { version = "0.25", default-features = false, features = ["png"] }
+ab_glyph = "0.2"
+arboard = { version = "3.6", default-features = false, features = ["image-data", "wayland-data-control"] }

@@ -8,7 +8,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::action::Action;
 use crate::app::App;
-use crate::ui;
+use crate::{card, ui};
 
 const REFRESH_INTERVAL: Duration = Duration::from_secs(15);
 
@@ -142,11 +142,17 @@ impl Tui {
                         let _ = self.action_tx.send(next);
                     }
                 }
-                Action::OpenUrl(url) => {
-                    if let Err(e) = open_url(&url) {
-                        app.error = Some(e);
-                    }
+                Action::FetchStory(link) => app.spawn_story(self.action_tx.clone(), link),
+                Action::StoryFetched(link, result) => app.apply_story(link, result),
+                // Rasterising and encoding the card takes a noticeable
+                // fraction of a second, so it runs off the UI thread.
+                Action::Share(card) => {
+                    let tx = self.action_tx.clone();
+                    tokio::task::spawn_blocking(move || {
+                        let _ = tx.send(Action::Shared(card::share(&card)));
+                    });
                 }
+                Action::Shared(result) => app.apply_shared(result),
             }
 
             if app.should_quit {
@@ -169,26 +175,4 @@ impl Drop for Tui {
         self.cancel();
         self.task.abort();
     }
-}
-
-/// Hands a URL to the platform's browser.
-///
-/// Spawned detached with both streams sent to null: a chatty opener writing to
-/// stderr would draw straight onto the alternate screen, which is where this
-/// app renders.
-fn open_url(url: &str) -> Result<(), String> {
-    let opener = if cfg!(target_os = "macos") {
-        "open"
-    } else if cfg!(target_os = "windows") {
-        "explorer"
-    } else {
-        "xdg-open"
-    };
-    std::process::Command::new(opener)
-        .arg(url)
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn()
-        .map(|_| ())
-        .map_err(|e| format!("could not open a browser with {opener}: {e}"))
 }
