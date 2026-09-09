@@ -1,3 +1,8 @@
+> **This repository is archived.** macro-tui now lives in
+> [jp30566347/tui](https://github.com/jp30566347/tui), alongside nhl-tui, and
+> releases from there. Install with
+> `curl -fsSL https://jp30566347.github.io/tui/macro-tui/install.sh | sh`.
+
 # macro-tui
 
 [jp30566347.github.io/macro-tui](https://jp30566347.github.io/macro-tui)
